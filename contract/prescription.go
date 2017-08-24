@@ -15,7 +15,6 @@ import (
 	"github.com/hyperledger/fabric/protos/peer"
 )
 
-// using pointers is pointles.. cc won't give you back original element. Need more research, possibly possible
 var PrescriptionsListStr = "_prescriptions" // name for the key/value that will store all prescriptions
 
 type Prescription struct {
@@ -48,36 +47,28 @@ func (t *SimpleAsset) Init(stub shim.ChaincodeStubInterface) peer.Response {
 	_, args := stub.GetFunctionAndParameters()
 
 	if len(args) != 1 {
-		// return nil, errors.New("Incorrect number of arguments. Expecting 1")
 		return shim.Error("Incorrect number of arguments. Expecting 1")
-
 	}
 
 	// Initialize the chaincode
 	Aval, err = strconv.Atoi(args[0])
 	if err != nil {
-		// return nil, errors.New("Expecting integer value for asset holding")
 		return shim.Error("Expecting integer value for asset holding")
 	}
 
 	// Write the state to the ledger
 	err = stub.PutState("abc", []byte(strconv.Itoa(Aval))) //making a test var "abc", I find it handy to read/write to it right away to test the network
 	if err != nil {
-		return shim.Error("ABC errror")
-
-		// return nil, err
+		return shim.Error("Init errror")
 	}
 
 	var prescrip PrescriptionList
 	jsonAsBytes, _ := json.Marshal(prescrip) //clear the PrescriptionList struct
 	err = stub.PutState(PrescriptionsListStr, jsonAsBytes)
 	if err != nil {
-		// return nil, err
-		return shim.Error("ABC errror")
+		return shim.Error("Init errror")
 	}
 	return shim.Success(nil)
-
-	// return nil, nil
 }
 
 // ============================================================================================================================
@@ -100,8 +91,6 @@ func (t *SimpleAsset) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 	}
 
 	fmt.Println("invoke did not find func: " + function)
-	//
-	// return nil, errors.New("Received unknown function invocation: " + function)
 	return shim.Error("Received unknown function invocation: ")
 
 }
@@ -112,22 +101,6 @@ func (t *SimpleAsset) Invoke(stub shim.ChaincodeStubInterface) peer.Response {
 func (t *SimpleAsset) query(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	fmt.Println("query is running ")
 
-	// Handle different functions
-
-	return t.read(stub, args)
-
-	// fmt.Println("query did not find func: ")
-
-	// return shim.Error("Received unknown fnknown function queryn: ")
-
-	// return nil, errors.New("Received unknown function query: " + function)
-}
-
-// ============================================================================================================================
-// Read - read a variable from chaincode state (used by Query)
-// ============================================================================================================================
-
-func (t *SimpleAsset) read(stub shim.ChaincodeStubInterface, args []string) peer.Response {
 	_, args = stub.GetFunctionAndParameters()
 
 	var key string
@@ -135,24 +108,15 @@ func (t *SimpleAsset) read(stub shim.ChaincodeStubInterface, args []string) peer
 
 	if len(args) != 1 {
 		return shim.Error("Incorrect number of arguments. Expecting name of the key to query")
-
-		// return nil, errors.New("Incorrect number of arguments. Expecting name of the key to query")
 	}
 
 	key = args[0]
 	valAsbytes, err := stub.GetState(key)
 	if err != nil {
-		// var jsonResp string
-		// jsonResp := "{\"Error\":\"Failed to get state for " + key + "\"}"
 		return shim.Error("json error")
-
-		// return nil, errors.New(jsonResp)
 	}
 
-	//
 	return shim.Success(valAsbytes)
-
-	// return valAsbytes, nil
 }
 
 // ============================================================================================================================
@@ -164,9 +128,7 @@ func (t *SimpleAsset) write(stub shim.ChaincodeStubInterface, args []string) pee
 	fmt.Println("running write()")
 
 	if len(args) != 2 {
-		return shim.Error("ncorrect number of arguments. Expecting 2. n")
-
-		// return nil, errors.New("Incorrect number of arguments. Expecting 2. name of the key and value to set")
+		return shim.Error("Incorrect number of arguments. Expecting 2: name of the key and value to set")
 	}
 
 	key = args[0] //rename for funsies
@@ -175,7 +137,6 @@ func (t *SimpleAsset) write(stub shim.ChaincodeStubInterface, args []string) pee
 	if err != nil {
 		return shim.Error("jSome errror")
 	}
-	// return nil, nil
 	return shim.Success(nil)
 
 }
@@ -189,9 +150,7 @@ func (t *SimpleAsset) add_prescription(stub shim.ChaincodeStubInterface, args []
 	//   0        1         2         3        4        5           6
 	// "uid", "patient", "doctor", "drug", "dosage", "units", "description"
 	if len(args) < 7 {
-		return shim.Error("ncorrect number of arguments. Expecting 2. n")
-
-		// return nil, errors.New("Incorrect number of arguments. Expecting 7")
+		return shim.Error("Incorrect number of arguments. Expecting 7")
 	}
 
 	fmt.Println("- Beginning of add_prescription")
@@ -208,12 +167,8 @@ func (t *SimpleAsset) add_prescription(stub shim.ChaincodeStubInterface, args []
 
 	dosage, err := strconv.Atoi(args[4])
 	if err != nil {
-		return shim.Error("ncorrect number of arguments. Expecting 2. n")
-
-		// return nil, errors.New("5th argument (dosage) must be a numeric string")
+		return shim.Error("5th argument (dosage) must be a numeric string")
 	}
-
-	/// what to do for boolean? numeric string?
 
 	var prescription = Prescription{}
 	prescription.Uid = args[0]
@@ -223,7 +178,7 @@ func (t *SimpleAsset) add_prescription(stub shim.ChaincodeStubInterface, args []
 	prescription.Dosage = dosage
 	prescription.Units = args[5]
 	prescription.Description = args[6]
-	prescription.Filled = false // is this correct?
+	prescription.Filled = false
 	prescription.Pharmacist = ""
 
 	fmt.Println("below is new prescription: ")
@@ -233,19 +188,14 @@ func (t *SimpleAsset) add_prescription(stub shim.ChaincodeStubInterface, args []
 	prescripAsBytes, _ := json.Marshal(prescription)
 	err = stub.PutState(args[0], prescripAsBytes)
 	if err != nil {
-		return shim.Error("ncorrect number of arguments. Expecting 2. n")
-
-		// return nil, err
+		return shim.Error("Error pushing prescription back into blockchain")
 	}
 
 	/////////// 2) append prescription into prescriptionList
 	// A: get the PrescriptionList struct
 	PrescripListAsBytes, err := stub.GetState(PrescriptionsListStr)
 	if err != nil {
-		//
-		return shim.Error("ncorrect number of arguments. Expecting 2. n")
-
-		// return nil, errors.New("Failed to get PrescriptionList")
+		return shim.Error("Failed to get PrescriptionList")
 	}
 	var pl PrescriptionList
 	json.Unmarshal(PrescripListAsBytes, &pl) //un stringify it aka JSON.parse()
@@ -256,18 +206,13 @@ func (t *SimpleAsset) add_prescription(stub shim.ChaincodeStubInterface, args []
 
 	// C: push prescription list back into blockchain
 	plAsBytes, _ := json.Marshal(pl)
-	err = stub.PutState(PrescriptionsListStr, plAsBytes) // rewrite marketplace
+	err = stub.PutState(PrescriptionsListStr, plAsBytes) // rewrite prescription list
 	if err != nil {
-		return shim.Error("ncorrect number of arguments. Expecting 2. n")
-		//
-		// return nil, err
+		return shim.Error("Error pushing prescription list back into blockchain")
 	}
 
 	fmt.Println("- end of add_prescription")
 	return shim.Success(nil)
-
-	// return nil, nil
-
 }
 
 // ============================================================================================================================
@@ -279,11 +224,7 @@ func (t *SimpleAsset) fill_prescription(stub shim.ChaincodeStubInterface, args [
 	//   0         1
 	// uid",  "pharmacist"
 	if len(args) < 2 {
-		//
-		//
-		return shim.Error("ncorrect number of arguments. Expecting 2. n")
-
-		// return nil, errors.New("Incorrect number of arguments. Expecting 2")
+		return shim.Error("incorrect number of arguments. Expecting 2.")
 	}
 
 	fmt.Println("- Beginning of fill_prescription")
@@ -293,85 +234,87 @@ func (t *SimpleAsset) fill_prescription(stub shim.ChaincodeStubInterface, args [
 	// A: get prescription from blockchain
 	prescripAsBytes, err := stub.GetState(args[0])
 	if err != nil {
-		return shim.Error("ncorrect number of arguments. Expecting 2. n")
-
-		// return nil, errors.New("Failed to get prescription")
+		return shim.Error("Error in getting prescription from blockchain")
+	}
+	if len(prescripAsBytes) == 0 {
+		return shim.Error("Prescription not found. This is not a legitimate prescription.")
 	}
 
 	res := Prescription{}
 	json.Unmarshal(prescripAsBytes, &res) //un stringify it aka JSON.parse()
 
-	// B: set prescription to filled and include pharmacist
-	res.Filled = true
-	fmt.Println("! set filled prescription to true")
-	fmt.Println(res)
+	if res.Filled == false {
 
-	res.Pharmacist = args[1]
-	fmt.Println("! set prescription pharmacist")
-	fmt.Println(res)
+		// B: set prescription to filled and include pharmacist
+		res.Filled = true
+		fmt.Println("! set filled prescription to true")
+		fmt.Println(res)
 
-	// C: update prescription and push back into blockchain
-	newPrescripAsBytes, _ := json.Marshal(res)
-	//rewrite the prescription with id as key
-	err = stub.PutState(args[0], newPrescripAsBytes)
-	if err != nil {
-		return shim.Error("ncorrect number of arguments. Expecting 2. n")
+		res.Pharmacist = args[1]
+		fmt.Println("! set prescription pharmacist")
+		fmt.Println(res)
 
-		// return nil, err
-	}
-
-	//// 2. update prescription in PrescriptionList since we can't use pointers
-	// A: get all active tasks in marketplace
-	PrescripListAsBytes, err := stub.GetState(PrescriptionsListStr)
-	if err != nil {
-		//
-		return shim.Error("ncorrect number of arguments. Expecting 2. n")
-
-		// return nil, errors.New("Failed to get PrescriptionList")
-	}
-	var pl PrescriptionList
-	json.Unmarshal(PrescripListAsBytes, &pl) //un stringify it aka JSON.parse()
-
-	fmt.Print("Prescription List: ")
-	fmt.Println(pl)
-
-	// B: find prescription in list and update it
-	for i := range pl.List { //iter through all the tasks
-		fmt.Print("looking @ prescription: ")
-		fmt.Println(pl.List[i])
-
-		if pl.List[i].Uid == args[0] { // found the trade to update
-			fmt.Println("Found prescription to fill")
-
-			pl.List[i].Filled = true
-			pl.List[i].Pharmacist = args[1]
-			fmt.Println("! filled prescription and added pharmacist pList")
-			fmt.Println(pl.List[i].Filled)
-			fmt.Println(pl.List[i].Pharmacist)
-
-			// C: push filled prescription back into blockchain
-			jsonAsBytes, _ := json.Marshal(pl)
-			err = stub.PutState(PrescriptionsListStr, jsonAsBytes) // rewrite the marketplace with new submission
-			if err != nil {
-				return shim.Error("ncorrect number of arguments. Expecting 2. n")
-
-				// return nil, err
-			}
-			break
-		} else if i == (len(pl.List) - 1) {
-			return shim.Error("ncorrect number of arguments. Expecting 2. n")
-
-			// return nil, errors.New("! Prescription not found in fill_prescription")
+		// C: update prescription and push back into blockchain
+		newPrescripAsBytes, _ := json.Marshal(res)
+		//rewrite the prescription with id as key
+		err = stub.PutState(args[0], newPrescripAsBytes)
+		if err != nil {
+			return shim.Error("Error in rewriting prescription into blockchain.")
 		}
+
+		//// 2. update prescription in PrescriptionList since we can't use pointers
+		// A: get all active tasks in marketplace
+		PrescripListAsBytes, err := stub.GetState(PrescriptionsListStr)
+		if err != nil {
+			return shim.Error("Failed to get PrescriptionList")
+		}
+		var pl PrescriptionList
+		json.Unmarshal(PrescripListAsBytes, &pl) //un stringify it aka JSON.parse()
+
+		fmt.Print("Prescription List: ")
+		fmt.Println(pl)
+
+		// B: find prescription in list and update it
+		for i := range pl.List { //iter through all the tasks
+			fmt.Print("looking @ prescription: ")
+			fmt.Println(pl.List[i])
+
+			if pl.List[i].Uid == args[0] { // found the trade to update
+				fmt.Println("Found prescription to fill")
+
+				pl.List[i].Filled = true
+				pl.List[i].Pharmacist = args[1]
+				fmt.Println("! filled prescription and added pharmacist pList")
+				fmt.Println(pl.List[i].Filled)
+				fmt.Println(pl.List[i].Pharmacist)
+
+				// C: push filled prescription back into blockchain
+				jsonAsBytes, _ := json.Marshal(pl)
+				err = stub.PutState(PrescriptionsListStr, jsonAsBytes) // rewrite the presciption list with new prescription
+				if err != nil {
+					return shim.Error("Error in rewriting prescription to list")
+				}
+				break
+			} else if i == (len(pl.List) - 1) {
+				return shim.Error("! Prescription not found in fill_prescription")
+			}
+		}
+
+		fmt.Println("- end of fill_prescription")
+
+		return shim.Success(nil)
+
 	}
 
 	fmt.Println("- end of fill_prescription")
-	// return nil, nil
-	return shim.Success(nil)
+
+	return shim.Error("Prescription was previously filled. This is a double fill attempt.")
 
 }
 
-// main function starts up the chaincode in the container during instantiate
+// ============================================================================================================================
+// Main - main function
+// ============================================================================================================================
 func main() {
 	if err := shim.Start(new(SimpleAsset)); err != nil {
 		fmt.Printf("Error starting SimpleAsset chaincode: %s", err)
